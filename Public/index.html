@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>🎮 عمر vs ريناد</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--card:#13131a;--border:#1e1e2e;
+  --omar:#f72585;--rinad:#4cc9f0;--yellow:#ffd60a;
+  --green:#2dc653;--text:#e0e0ff;--muted:#666680;
+}
+body{background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(247,37,133,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(76,201,240,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:1rem;align-items:center;justify-content:center;flex-direction:column;gap:.7rem;}
+.screen.active{display:flex;animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes popIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+
+‏/* SCOREBOARD */
+‏.scoreboard{display:flex;gap:.8rem;width:100%;max-width:420px;}
+‏.score-box{flex:1;border-radius:16px;padding:.9rem;text-align:center;border:2px solid transparent;transition:all .3s;}
+‏.score-box.omar{background:rgba(247,37,133,0.1);border-color:rgba(247,37,133,0.3)}
+‏.score-box.rinad{background:rgba(76,201,240,0.1);border-color:rgba(76,201,240,0.3)}
+‏.score-box.my-turn{animation:glowTurn 1s ease-in-out infinite alternate;transform:scale(1.03)}
+‏@keyframes glowTurn{from{box-shadow:0 0 0 rgba(255,214,10,0)}to{box-shadow:0 0 25px rgba(255,214,10,0.5);border-color:var(--yellow)!important}}
+‏.score-name{font-size:.85rem;color:var(--muted)}
+‏.score-pts{font-size:2.2rem;font-weight:900}
+‏.score-box.omar .score-pts{color:var(--omar)}
+‏.score-box.rinad .score-pts{color:var(--rinad)}
+‏.turn-lbl{font-size:.75rem;color:var(--yellow);min-height:1.1rem;margin-top:.2rem}
+
+‏/* CARD */
+‏.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:1.8rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+
+‏/* TYPOGRAPHY */
+‏.big-emoji{font-size:3.5rem;text-align:center;animation:float 3s ease-in-out infinite}
+‏@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+‏.page-title{font-size:2rem;font-weight:900;text-align:center;background:linear-gradient(135deg,var(--omar),var(--rinad));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+‏.page-sub{color:var(--muted);text-align:center;font-size:.95rem}
+‏.section-title{font-size:1rem;font-weight:800;color:var(--yellow);text-align:center;margin-bottom:.5rem}
+
+‏/* BUTTONS */
+‏.btn{width:100%;padding:.9rem;border:none;border-radius:12px;font-family:'Tajawal',sans-serif;font-size:1.05rem;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:.5rem;}
+‏.btn-omar{background:linear-gradient(135deg,var(--omar),#b5179e);color:#fff;box-shadow:0 4px 20px rgba(247,37,133,0.4)}
+‏.btn-omar:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(247,37,133,0.6)}
+‏.btn-rinad{background:linear-gradient(135deg,var(--rinad),#4361ee);color:#fff;box-shadow:0 4px 20px rgba(76,201,240,0.3)}
+‏.btn-rinad:hover{transform:translateY(-2
