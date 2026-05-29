@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>🎮 عمر vs ريناد</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet"/>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  databaseURL: "https://omar-game-d8466-default-rtdb.firebaseio.com/"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.fbSet = (path, val) => set(ref(db, path), val);
+window.fbListen = (path, cb) => onValue(ref(db, path), snap => cb(snap.val()));
+window.fbRemove = (path) => remove(ref(db, path));
+
+window.firebaseReady = true;
+document.dispatchEvent(new Event('firebase-ready'));
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--card:#13131a;--border:#1e1e2e;
+  --omar:#f72585;--rinad:#4cc9f0;--yellow:#ffd60a;
+  --green:#2dc653;--text:#e0e0ff;--muted:#666680;
+}
+body{background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(247,37,133,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(76,201,240,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+.screen{display:none;position:relative;z-index:1;min-height:100vh;padding:1rem;align-items:center;justify-content:center;flex-direction:column;gap:.7rem;}
+.screen.active{display:flex;animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes popIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+
+.scoreboard{display:flex;gap:.8rem;width:100%;max-width:420px;}
+.score-box{flex:1;border-radius:16px;padding:.9rem;text-align:center;border:2px solid transparent;transition:all .3s;}
+.score-box.omar{background:rgba(247,37,133,0.1);border-color:rgba(247,37,133,0.3)}
+.score-box.rinad{background:rgba(76,201,240,0.1);border-color:rgba(76,201,240,0.3)}
+.score-box.my-turn{animation:glowTurn 1s ease-in-out infinite alternate;transform:scale(1.03)}
+@keyframes glowTurn{from{box-shadow:0 0 0 rgba(255,214,10,0)}to{box-shadow:0 0 25px rgba(255,214,10,0.5);border-color:var(--yellow)!important}}
+.score-name{font-size:.85rem;color:var(--muted)}
+.score-pts{font-size:2.2rem;font-weight:900}
+.score-box.omar .score-pts{color:var(--omar)}
+.score-box.rinad .score-pts{color:var(--rinad)}
+.turn-lbl{font-size:.75rem;color:var(--yellow);min-height:1.1rem;margin-top:.2rem}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:1.8rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.big-emoji{font-size:3.5rem;text-align:center;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.page-title{font-size:2rem;font-weight:900;text-align:center;background:linear-gradient(135deg,var(--omar),var(--rinad));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.page-sub{color:var(--muted);text-align:center;font-size:.95rem}
+.section-title{font-size:1rem;font-weight:800;color:var(--yellow);text-align:center;margin-bottom:.5rem}
+
+.btn{width:100%;padding:.9rem;border:none;border-radius:12px;font-family:'Tajawal',sans-serif;font-size:1.05rem;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:.5rem;}
+.btn-omar{background:linear-gradient(135deg,var(--omar),#b5179e);color:#fff;box-shadow:0 4px 20px rgba(247,37,133,0.4)}
+.btn-omar:hover{transform:translateY(-2px)}
+.btn-rinad{background:linear-gradient(135deg,var(--rinad),#4361ee);color:#fff;box-shadow:0 4px 20px rgba(76,201,240,0.3)}
+.btn-yellow{background:linear-gradient(135deg,var(--yellow),#f4a261);color:#000;font-weight:900}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);margin-bottom:0}
+.btn-ghost:hover{border-color:var(--muted);color:var(--text)}
+.btn-sm{padding:.6rem 1.2rem;width:auto;font-size:.95rem;margin:0}
+
+.game-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.game-card{background:#0d0d14;border:1.5px solid var(--border);border-radius:16px;padding:1.2rem .8rem;text-align:center;cursor:pointer;transition:all .2s;}
+.game-card:hover{border-color:var(--omar);background:rgba(247,37,133,0.08);transform:scale(1.04)}
+.g-emoji{font-size:2rem;display:block;margin-bottom:.4rem}
+.g-name{font-size:.9rem;font-weight:700}
+
+#xo-board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:280px;margin:0 auto}
+.xo-cell{aspect-ratio:1;background:#0d0d14;border:2px solid var(--border);border-radius:14px;font-size:2.5rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;user-select:none;}
+.xo-cell:hover:not(.filled){background:rgba(247,37,133,0.08);border-color:var(--omar)}
+.xo-cell.x-cell{color:var(--omar);border-color:rgba(247,37,133,0.5);animation:cellPop .3s cubic-bezier(.34,1.56,.64,1)}
+.xo-cell.o-cell{color:var(--rinad);border-color:rgba(76,201,240,0.5);animation:cellPop .3s cubic-bezier(.34,1.56,.64,1)}
+.xo-cell.win-cell{background:rgba(255,214,10,0.15);border-color:var(--yellow)!important;animation:winPulse .5s ease infinite alternate}
+@keyframes cellPop{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes winPulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+.xo-status{font-size:.95rem;color:var(--muted);text-align:center;min-height:1.4rem}
+
+.guess-num{font-size:4.5rem;font-weight:900;text-align:center;background:linear-gradient(135deg,var(--omar),var(--rinad));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.guess-hint{font-size:1rem;color:var(--muted);text-align:center;min-height:1.5rem;margin:.5rem 0}
+.num-row{display:flex;gap:.6rem;align-items:center}
+.num-inp{flex:1;padding:.8rem;background:#0d0d14;border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-family:'Tajawal',sans-serif;font-size:1rem;text-align:center;}
+.num-inp:focus{outline:none;border-color:var(--omar)}
+
+.reaction-big{font-size:5rem;text-align:center;min-height:6rem;display:flex;align-items:center;justify-content:center;}
+.reaction-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.react-btn{aspect-ratio:1;background:#0d0d14;border:2px solid var(--border);border-radius:14px;font-size:2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.react-btn:hover{transform:scale(1.12);border-color:var(--omar)}
+
+.trivia-q{background:#0d0d14;border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin-bottom:.8rem;font-size:1.05rem;font-weight:700;line-height:1.6;text-align:center}
+.opt{width:100%;background:#0d0d14;border:1.5px solid var(--border);border-radius:12px;padding:.85rem 1rem;font-family:'Tajawal',sans-serif;font-size:.95rem;color:var(--text);cursor:pointer;text-align:right;display:flex;align-items:center;gap:.7rem;margin-bottom:.5rem;transition:all .2s;}
+.opt:hover:not(:disabled){border-color:var(--omar);background:rgba(247,37,133,0.08)}
+.opt.correct{border-color:var(--green)!important;background:rgba(45,198,83,0.15)!important;color:var(--green)}
+.opt.wrong{border-color:#ff6b6b!important;background:rgba(255,107,107,0.15)!important;color:#ff6b6b}
+.opt-ltr{width:28px;height:28px;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;color:var(--muted)}
+
+.td-card{background:linear-gradient(135deg,rgba(247,37,133,0.1),rgba(76,201,240,0.1));border:1.5px solid rgba(247,37,133,0.3);border-radius:20px;padding:1.5rem;text-align:center;width:100%;}
+.td-text{font-size:1.1rem;font-weight:700;line-height:1.7}
+
+#result-overlay{display:none;position:fixed;inset:0;z-index:50;background:rgba(10,10,15,0.97);align-items:center;justify-content:center;flex-direction:column;padding:2rem;text-align:center;gap:.8rem;}
+#result-overlay.show{display:flex;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.res-emoji{font-size:5rem;animation:float 2s ease-in-out infinite}
+.res-title{font-size:2rem;font-weight:900}
+.res-sub{color:var(--muted);font-size:.95rem;max-width:320px;line-height:1.8}
+.challenge-box{background:linear-gradient(135deg,rgba(247,37,133,0.12),rgba(76,201,240,0.12));border:1.5px solid rgba(247,37,133,0.35);border-radius:18px;padding:1.3rem;max-width:340px;text-align:center;width:100%}
+.ch-emoji{font-size:2.5rem;display:block;margin-bottom:.5rem}
+.ch-title{font-size:.85rem;color:var(--muted);margin-bottom:.3rem}
+.ch-text{font-size:1rem;font-weight:700;line-height:1.7}
+.loser-name{color:var(--omar);font-size:1.2rem;font-weight:900}
+
+/* WAITING */
+.wait-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2rem;width:100%;max-width:380px;text-align:center}
+.room-code{font-size:2.5rem;font-weight:900;letter-spacing:.2em;color:var(--yellow);background:#0d0d14;border:1px solid var(--border);border-radius:12px;padding:.6rem 1.2rem;margin:.8rem 0;display:inline-block}
+.status-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--muted);margin-right:.4rem;animation:blink 1s ease-in-out infinite}
+.status-dot.on{background:var(--green);animation:none}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+
+.floater{position:fixed;pointer-events:none;z-index:100;font-size:1.5rem;animation:riseUp 2s ease forwards}
+@keyframes riseUp{from{transform:translateY(0);opacity:1}to{transform:translateY(-180px);opacity:0}}
+.divider{width:100%;height:1px;background:var(--border);margin:.3rem 0}
+
+.inp{width:100%;padding:.8rem 1rem;background:#0d0d14;border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-family:'Tajawal',sans-serif;font-size:1rem;margin-bottom:.6rem;}
+.inp:focus{outline:none;border-color:var(--omar)}
+</style>
+</head>
+<body>
+
+<!-- LOBBY -->
+<div class="screen active" id="s-lobby">
+  <div class="big-emoji">🎮</div>
+  <div class="page-title">عمر vs ريناد</div>
+  <div class="page-sub">ألعاب أونلاين + تحديات 😂</div>
+  <div class="card">
+    <input class="inp" id="my-name" placeholder="اكتب اسمك (عمر أو ريناد)" maxlength="20"/>
+    <button class="btn btn-omar" onclick="createRoom()">🆕 إنشاء غرفة جديدة</button>
+    <div style="text-align:center;color:var(--muted);font-size:.85rem;margin:.3rem 0">أو</div>
+    <input class="inp" id="room-inp" placeholder="كود الغرفة" maxlength="6" style="text-transform:uppercase;letter-spacing:.15em;text-align:center"/>
+    <button class="btn btn-rinad" onclick="joinRoom()">🚪 انضم لغرفة</button>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div class="screen" id="s-wait">
+  <div class="big-emoji">⏳</div>
+  <div class="wait-card">
+    <div style="font-size:.9rem;color:var(--muted);margin-bottom:.4rem">شارك هذا الكود مع صاحبك 👇</div>
+    <div class="room-code" id="show-code">----</div>
+    <div style="font-size:.9rem;margin:.5rem 0">
+      <span class="status-dot" id="sdot"></span>
+      <span id="wait-status">في انتظار اللاعب الثاني...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="copyCode()" style="margin-top:.5rem">📋 نسخ الكود</button>
+  </div>
+</div>
+
+<!-- SELECT -->
+<div class="screen" id="s-select">
+  <div class="scoreboard" id="scoreboard"></div>
+  <div class="card">
+    <div class="section-title">اختر اللعبة 🎯</div>
+    <div id="whose-turn" style="text-align:center;font-size:.9rem;color:var(--muted);margin-bottom:.8rem"></div>
+    <div class="game-grid">
+      <div class="game-card" onclick="voteGame('xo')"><span class="g-emoji">❌⭕</span><span class="g-name">إكس أو</span></div>
+      <div class="game-card" onclick="voteGame('guess')"><span class="g-emoji">🔢</span><span class="g-name">خمّن الرقم</span></div>
+      <div class="game-card" onclick="voteGame('reaction')"><span class="g-emoji">⚡</span><span class="g-name">ردة فعل</span></div>
+      <div class="game-card" onclick="voteGame('trivia')"><span class="g-emoji">🧠</span><span class="g-name">سؤال وجواب</span></div>
+      <div class="game-card" onclick="voteGame('td')"><span class="g-emoji">🎲</span><span class="g-name">صح أو جرأة</span></div>
+      <div class="game-card" onclick="voteGame('math')"><span class="g-emoji">🔥</span><span class="g-name">تحدي حساب</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- XO -->
+<div class="screen" id="s-xo">
+  <div class="scoreboard" id="sb-xo"></div>
+  <div style="width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:.7rem">
+    <div class="section-title">❌⭕ إكس أو</div>
+    <div class="xo-status" id="xo-status"></div>
+    <div id="xo-board"></div>
+    <button class="btn btn-ghost btn-sm" onclick="goSelect()" style="margin-top:.5rem">🏠 رجوع</button>
+  </div>
+</div>
+
+<!-- GUESS -->
+<div class="screen" id="s-guess">
+  <div class="scoreboard" id="sb-guess"></div>
+  <div class="card">
+    <div class="section-title">🔢 خمّن الرقم (1-100)</div>
+    <div class="guess-num" id="guess-disp">؟</div>
+    <div class="guess-hint" id="guess-hint"></div>
+    <div id="guess-ctrl"></div>
+    <div class="divider" style="margin-top:.8rem"></div>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="goSelect()">🏠 رجوع</button>
+  </div>
+</div>
+
+<!-- REACTION -->
+<div class="screen" id="s-reaction">
+  <div class="scoreboard" id="sb-reaction"></div>
+  <div class="card">
+    <div class="section-title">⚡ سرعة ردة فعل</div>
+    <div id="reaction-status" style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:.5rem"></div>
+    <div class="reaction-big" id="reaction-disp">🎯</div>
+    <div id="reaction-ctrl" style="margin-top:.8rem"></div>
+    <div class="divider" style="margin-top:.8rem"></div>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="goSelect()">🏠 رجوع</button>
+  </div>
+</div>
+
+<!-- TRIVIA -->
+<div class="screen" id="s-trivia">
+  <div class="scoreboard" id="sb-trivia"></div>
+  <div class="card">
+    <div class="section-title">🧠 سؤال وجواب</div>
+    <div id="trivia-area"></div>
+    <div class="divider" style="margin-top:.5rem"></div>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="goSelect()">🏠 رجوع</button>
+  </div>
+</div>
+
+<!-- TD -->
+<div class="screen" id="s-td">
+  <div class="scoreboard" id="sb-td"></div>
+  <div class="card">
+    <div class="section-title">🎲 صح أو جرأة</div>
+    <div id="td-whose" style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:.8rem"></div>
+    <div style="display:flex;gap:.6rem;margin-bottom:1rem">
+      <button class="btn btn-omar btn-sm" style="flex:1" onclick="pickTD('truth')">✅ صح</button>
+      <button class="btn btn-rinad btn-sm" style="flex:1" onclick="pickTD('dare')">🔥 جرأة</button>
+    </div>
+    <div id="td-result" style="display:none"></div>
+    <div class="divider" style="margin-top:.8rem"></div>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="goSelect()">🏠 رجوع</button>
+  </div>
+</div>
+
+<!-- MATH -->
+<div class="screen" id="s-math">
+  <div class="scoreboard" id="sb-math"></div>
+  <div class="card">
+    <div class="section-title">🔥 تحدي الحساب</div>
+    <div id="math-area"></div>
+    <div class="divider" style="margin-top:.8rem"></div>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="goSelect()">🏠 رجوع</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result-overlay">
+  <div class="res-emoji" id="res-emoji">🏆</div>
+  <div class="res-title" id="res-title"></div>
+  <div class="res-sub" id="res-sub"></div>
+  <div class="challenge-box" id="ch-box">
+    <span class="ch-emoji" id="ch-emoji">😂</span>
+    <div class="ch-title">تحدي الخاسر! 👇</div>
+    <div class="ch-text" id="ch-text"></div>
+  </div>
+  <button class="btn btn-yellow btn-sm" onclick="backToSelect()" style="max-width:220px;margin-top:.5rem">🎮 لعبة جديدة</button>
+  <button class="btn btn-ghost btn-sm" onclick="closeResult()" style="max-width:220px">✕ إغلاق</button>
+</div>
+
+<script>
+const CHALLENGES=[{e:'🎤',t:'اغنِّ أي أغنية بصوت عالي 30 ثانية!'},{e:'🐔',t:'قلّد صوت الدجاجة 3 مرات 😂'},{e:'💃',t:'اعمل رقصة 20 ثانية!'},{e:'😂',t:'قل "أنا خسرت وأنا أحلى" 5 مرات!'},{e:'🤸',t:'اعمل 15 قفزة الحين!'},{e:'📸',t:'سيلفي بأبشع وجه وأرسله للفائز!'},{e:'🗣️',t:'قدّم مدح للفائز دقيقة كاملة 😏'},{e:'🍭',t:'الفائز يطلب منك أي شيء ليوم!'},{e:'✍️',t:'اكتب قصيدة بيتين عن خسارتك!'},{e:'🙈',t:'اعترف بأحرج موقف 😂'}];
+const TRUTHS=['ما أحرج موقف مررت فيه؟','لو فتحنا جهازك الآن إيش تخبّي؟ 😂','من آخر شخص بكيت بسببه؟','إيش أكثر كذبة قلتها؟','من أكثر شخص يزعجك؟','إيش أغرب فكرة راودتك؟','إيش أكثر شيء تكرهه في نفسك؟','لو تغيّر شيء واحد في حياتك إيش هو؟'];
+const DARES=['أرسل ستيكر محرج لآخر شخص بمحادثاتك! 😂','اتصل بأي شخص وقل أحبك واقطع! 🏃','قلّد صوت شخص تعرفه دقيقة!','اترك تعليق مجنون على أحدث صورة لصديقك!','اكتب مدح للفائز في حالة واتساب ساعة!','صوّر فيديو تحكي قصة مخجلة وأرسله للفائز!'];
+const TRIVIA=[{q:'كم عدد كواكب المجموعة الشمسية؟',opts:['7','8','9','10'],a:1},{q:'ما عاصمة اليابان؟',opts:['بكين','سيول','طوكيو','بانكوك'],a:2},{q:'كم يوماً في السنة الكبيسة؟',opts:['364','365','366','367'],a:2},{q:'من اخترع الهاتف؟',opts:['إديسون','غراهام بيل','نيوتن','تيسلا'],a:1},{q:'ما أكبر محيط في العالم؟',opts:['الأطلسي','الهندي','المتجمد','الهادئ'],a:3},{q:'كم لون في قوس قزح؟',opts:['5','6','7','8'],a:2},{q:'ما أسرع حيوان بري؟',opts:['الأسد','الفهد','الحصان','الغزال'],a:1},{q:'في أي دولة بُني برج إيفل؟',opts:['إيطاليا','إسبانيا','فرنسا','ألمانيا'],a:2},{q:'ما عاصمة البرازيل؟',opts:['ريو','ساو باولو','برازيليا','بوينس آيرس'],a:2},{q:'كم ضلعاً في المثمن؟',opts:['6','7','8','9'],a:2}];
+const WIN_LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+let myPlayer=0, roomCode='', myName='', gameState={};
+const COLORS={1:'var(--omar)',2:'var(--rinad)'};
+
+function waitFirebase(cb){
+  if(window.firebaseReady) cb();
+  else document.addEventListener('firebase-ready',cb,{once:true});
+}
+
+function genCode(){ return Math.random().toString(36).substr(2,5).toUpperCase(); }
+
+function createRoom(){
+  myName=document.getElementById('my-name').value.trim()||'عمر';
+  roomCode=genCode();
+  myPlayer=1;
+  document.getElementById('show-code').textContent=roomCode;
+  showScreen('s-wait');
+  waitFirebase(()=>{
+    fbSet(`rooms/${roomCode}/players/1`,myName);
+    fbListen(`rooms/${roomCode}/players/2`,v=>{
+      if(v){
+        document.getElementById('sdot').classList.add('on');
+        document.getElementById('wait-status').textContent=`${v} انضم! 🎉`;
+        setTimeout(()=>{ fbSet(`rooms/${roomCode}/scores`,{1:0,2:0}); initSelect(); },1000);
+      }
+    });
+    fbListen(`rooms/${roomCode}/state`,v=>{ if(v) handleState(v); });
+  });
+}
+
+function joinRoom(){
+  myName=document.getElementById('my-name').value.trim()||'ريناد';
+  roomCode=document.getElementById('room-inp').value.trim().toUpperCase();
+  if(!roomCode){alert('أدخل الكود!');return;}
+  myPlayer=2;
+  waitFirebase(()=>{
+    fbSet(`rooms/${roomCode}/players/2`,myName);
+    fbListen(`rooms/${roomCode}/state`,v=>{ if(v) handleState(v); });
+    fbListen(`rooms/${roomCode}/scores`,v=>{ if(v){gameState.scores=v; renderAllSB();} });
+  });
+  showScreen('s-wait');
+  document.getElementById('show-code').textContent=roomCode;
+  document.getElementById('wait-status').textContent='جاري الاتصال...';
+}
+
+function copyCode(){
+  navigator.clipboard.writeText(roomCode).then(()=>{
+    const b=event.target;b.textContent='✅ تم!';setTimeout(()=>b.textContent='📋 نسخ الكود',2000);
+  });
+}
+
+function setState(data){ fbSet(`rooms/${roomCode}/state`,data); }
+
+function handleState(v){
+  if(!v) return;
+  gameState={...gameState,...v};
+  const g=v.game;
+  if(v.screen==='select'){ initSelect(); return; }
+  if(v.screen==='xo'){ showScreen('s-xo'); renderXO(); return; }
+  if(v.screen==='guess'){ showScreen('s-guess'); renderGuess(); return; }
+  if(v.screen==='reaction'){ showScreen('s-reaction'); renderReaction(); return; }
+  if(v.screen==='trivia'){ showScreen('s-trivia'); renderTriviaQ(); return; }
+  if(v.screen==='td'){ showScreen('s-td'); renderTD(); return; }
+  if(v.screen==='math'){ showScreen('s-math'); renderMath(); return; }
+}
+
+// ── SELECT ──
+function initSelect(){
+  fbListen(`rooms/${roomCode}/scores`,v=>{ if(v){gameState.scores=v; renderAllSB();} });
+  fbListen(`rooms/${roomCode}/players/1`,v=>{ if(v) gameState.name1=v; });
+  fbListen(`rooms/${roomCode}/players/2`,v=>{ if(v) gameState.name2=v; });
+  showScreen('s-select');
+  if(!gameState.scores) gameState.scores={1:0,2:0};
+  if(!gameState.turn) gameState.turn=1;
+  renderAllSB();
+  updateWhoseTurn();
+}
+
+function getName(p){ return p===1?(gameState.name1||'عمر'):(gameState.name2||'ريناد'); }
+
+function updateWhoseTurn(){
+  const el=document.getElementById('whose-turn');
+  if(el) el.innerHTML=`دور <span style="color:${COLORS[gameState.turn||1]};font-weight:800">${getName(gameState.turn||1)}</span> يختار اللعبة 🎯`;
+}
+
+function voteGame(g){
+  if((gameState.turn||1)!==myPlayer){ alert('مو دورك! 😄'); return; }
+  gameState.game=g;
+  if(g==='xo') startXO();
+  else if(g==='guess') startGuess();
+  else if(g==='reaction') startReaction();
+  else if(g==='trivia') startTrivia();
+  else if(g==='td') startTD();
+  else if(g==='math') startMath();
+}
+
+function renderAllSB(){
+  ['scoreboard','sb-xo','sb-guess','sb-reaction','sb-trivia','sb-td','sb-math'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const t=gameState.turn||1;
+    const s=gameState.scores||{1:0,2:0};
+    el.innerHTML=`
+      <div class="score-box omar ${t===1?'my-turn':''}">
+        <div class="score-name">${getName(1)}</div>
+        <div class="score-pts">${s[1]||0}</div>
+        <div class="turn-lbl">${t===1?'دوره 🎯':''}</div>
+      </div>
+      <div class="score-box rinad ${t===2?'my-turn':''}">
+        <div class="score-name">${getName(2)}</div>
+        <div class="score-pts">${s[2]||0}</div>
+        <div class="turn-lbl">${t===2?'دوره 🎯':''}</div>
+      </div>`;
+  });
+}
+
+function goSelect(){
+  gameState.game='';
+  setState({screen:'select',turn:gameState.turn||1,game:''});
+}
+
+// ── XO ──
+function startXO(){
+  const board=Array(9).fill('');
+  gameState.xoBoard=board; gameState.xoTurn=1;
+  setState({screen:'xo',xoBoard:board,xoTurn:1,turn:gameState.turn});
+  showScreen('s-xo'); renderXO();
+}
+
+function renderXO(){
+  const board=gameState.xoBoard||Array(9).fill('');
+  const xt=gameState.xoTurn||1;
+  const bEl=document.getElementById('xo-board');
+  bEl.innerHTML='';
+  board.forEach((v,i)=>{
+    const c=document.createElement('div');
+    c.className='xo-cell'+(v?' filled '+(v==='X'?'x-cell':'o-cell'):'');
+    c.textContent=v==='X'?'❌':v==='O'?'⭕':'';
+    c.onclick=()=>xoMove(i);
+    bEl.appendChild(c);
+  });
+  const w=xoWinner(board);
+  if(w) w.line.forEach(i=>bEl.children[i].classList.add('win-cell'));
+  const st=document.getElementById('xo-status');
+  if(w) st.textContent=`فاز ${getName(w.p)}! 🏆`;
+  else if(!board.includes('')) st.textContent='تعادل! 🤝';
+  else st.innerHTML=`دور <span style="color:${COLORS[xt]};font-weight:700">${getName(xt)}</span> ${xt===1?'❌':'⭕'}`;
+  renderAllSB();
+}
+
+function xoMove(i){
+  const board=[...(gameState.xoBoard||Array(9).fill(''))];
+  const xt=gameState.xoTurn||1;
+  if(xt!==myPlayer||board[i]) return;
+  if(xoWinner(board)||!board.includes('')) return;
+  board[i]=xt===1?'X':'O';
+  const w=xoWinner(board);
+  const nextTurn=xt===1?2:1;
+  gameState.xoBoard=board; gameState.xoTurn=nextTurn;
+  setState({screen:'xo',xoBoard:board,xoTurn:nextTurn,turn:gameState.turn});
+  renderXO();
+  if(w){
+    const s={...gameState.scores}; s[w.p]=(s[w.p]||0)+1;
+    gameState.scores=s; fbSet(`rooms/${roomCode}/scores`,s);
+    setTimeout(()=>showResult(w.p),700);
+  } else if(!board.includes('')){
+    setTimeout(()=>showResult(0),500);
+  }
+}
+
+function xoWinner(b){
+  for(const [a,bc,c] of WIN_LINES){
+    if(b[a]&&b[a]===b[bc]&&b[a]===b[c]) return{p:b[a]==='X'?1:2,line:[a,bc,c]};
+  }return null;
+}
+
+// ── GUESS ──
+function startGuess(){
+  gameState.guessPhase='set'; gameState.guessSetter=myPlayer; gameState.secretNum=0;
+  setState({screen:'guess',guessPhase:'set',guessSetter:myPlayer,secretNum:0,guessHint:'',guessDisp:'🤫',turn:gameState.turn});
+  showScreen('s-guess'); renderGuess();
+}
+
+function renderGuess(){
+  const phase=gameState.guessPhase||'set';
+  const setter=gameState.guessSetter||1;
+  const guesser=setter===1?2:1;
+  document.getElementById('guess-disp').textContent=gameState.guessDisp||'؟';
+  document.getElementById('guess-hint').textContent=gameState.guessHint||'';
+  const ctrl=document.getElementById('guess-ctrl');
+  if(phase==='set'&&myPlayer===setter){
+    ctrl.innerHTML=`<div class="num-row"><input class="num-inp" id="set-inp" type="number" min="1" max="100" placeholder="الرقم السري 🤫"/><button class="btn btn-omar btn-sm" onclick="setSecret()">تأكيد ✅</button></div>`;
+  } else if(phase==='guess'&&myPlayer===guesser){
+    ctrl.innerHTML=`<div class="num-row"><input class="num-inp" id="guess-inp" type="number" min="1" max="100" placeholder="خمّنك..."/><button class="btn btn-rinad btn-sm" onclick="submitGuess()">خمّن 🎯</button></div>`;
+  } else {
+    ctrl.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:.9rem">⏳ انتظر...</div>`;
+  }
+  renderAllSB();
+}
+
+function setSecret(){
+  const v=parseInt(document.getElementById('set-inp').value);
+  if(!v||v<1||v>100){alert('رقم بين 1 و 100!');return;}
+  const guesser=(gameState.guessSetter||1)===1?2:1;
+  setState({screen:'guess',guessPhase:'guess',guessSetter:gameState.guessSetter,secretNum:v,guessDisp:'؟',guessHint:`${getName(guesser)} خمّن الرقم! 🎯`,turn:gameState.turn});
+}
+
+function submitGuess(){
+  const v=parseInt(document.getElementById('guess-inp').value);
+  if(!v||v<1||v>100){alert('رقم بين 1 و 100!');return;}
+  const secret=gameState.secretNum;
+  const guesser=(gameState.guessSetter||1)===1?2:1;
+  if(v===secret){
+    const s={...gameState.scores}; s[guesser]=(s[guesser]||0)+1;
+    gameState.scores=s; fbSet(`rooms/${roomCode}/scores`,s);
+    setState({screen:'guess',guessPhase:'done',guessSetter:gameState.guessSetter,secretNum:secret,guessDisp:String(v),guessHint:`🎉 أصاب! الرقم كان ${secret}`,turn:gameState.turn});
+    setTimeout(()=>showResult(guesser),800);
+  } else {
+    const hint=v<secret?`📈 أكبر من ${v}! جرّب مرة ثانية`:`📉 أصغر من ${v}! جرّب مرة ثانية`;
+    setState({screen:'guess',guessPhase:'guess',guessSetter:gameState.guessSetter,secretNum:secret,guessDisp:String(v),guessHint:hint,turn:gameState.turn});
+  }
+}
+
+// ── REACTION ──
+const REMOJIS=['🍕','🌮','🎂','🍦','🍔','🌸','🦋','⚽','🎸','🌈','🐱','🦊'];
+let rTimer=null;
+
+function startReaction(){
+  gameState.reactionScores={1:0,2:0}; gameState.reactionRound=0; gameState.reactionActive=false;
+  setState({screen:'reaction',reactionRound:0,reactionScores:{1:0,2:0},reactionStatus:'استعد!',reactionDisp:'🎯',reactionActive:false,reactionTarget:'',turn:gameState.turn});
+  showScreen('s-reaction');
+  if(myPlayer===1) setTimeout(nextReactionRound,1500);
+}
+
+function renderReaction(){
+  document.getElementById('reaction-disp').textContent=gameState.reactionDisp||'🎯';
+  document.getElementById('reaction-status').textContent=gameState.reactionStatus||'';
+  const ctrl=document.getElementById('reaction-ctrl');
+  if(gameState.reactionActive){
+    const shuffled=[...REMOJIS].sort(()=>Math.random()-.5).slice(0,9);
+    if(!shuffled.includes(gameState.reactionTarget)) shuffled[0]=gameState.reactionTarget;
+    ctrl.innerHTML=`<div class="reaction-grid">${shuffled.map(e=>`<button class="react-btn" onclick="tapReaction('${e}')">${e}</button>`).join('')}</div>`;
+  } else { ctrl.innerHTML=''; }
+  renderAllSB();
+}
+
+function nextReactionRound(){
+  const round=(gameState.reactionRound||0)+1;
+  if(round>6){
+    const rs=gameState.reactionScores||{1:0,2:0};
+    showResult(rs[1]>=rs[2]?1:2); return;
+  }
+  const player=((round-1)%2)+1;
+  setState({screen:'reaction',reactionRound:round,reactionScores:gameState.reactionScores||{1:0,2:0},reactionStatus:`جولة ${round}/6 - ${getName(player)} استعد... ⏳`,reactionDisp:'⏳',reactionActive:false,reactionTarget:'',reactionPlayer:player,turn:gameState.turn});
+  clearTimeout(rTimer);
+  rTimer=setTimeout(()=>{
+    if(myPlayer!==1) return;
+    const emoji=REMOJIS[Math.floor(Math.random()*REMOJIS.length)];
+    setState({screen:'reaction',reactionRound:round,reactionScores:gameState.reactionScores||{1:0,2:0},reactionStatus:`اضغط ${emoji} الآن!! ⚡`,reactionDisp:emoji,reactionActive:true,reactionTarget:emoji,reactionPlayer:player,turn:gameState.turn});
+  },Math.random()*3000+1500);
+}
+
+function tapReaction(e){
+  if(!gameState.reactionActive) return;
+  const target=gameState.reactionTarget;
+  const player=gameState.reactionPlayer||1;
+  if(myPlayer!==player) return;
+  const rs={...(gameState.reactionScores||{1:0,2:0})};
+  if(e===target) rs[player]=(rs[player]||0)+1;
+  const status=e===target?`✅ صح! ${getName(player)} +1 (${rs[1]}-${rs[2]})`:`❌ خطأ! كان ${target}`;
+  gameState.reactionScores=rs;
+  setState({screen:'reaction',reactionRound:gameState.reactionRound,reactionScores:rs,reactionStatus:status,reactionDisp:e===target?'✅':'❌',reactionActive:false,reactionTarget:'',reactionPlayer:player,turn:gameState.turn});
+  if(myPlayer===1) setTimeout(nextReactionRound,1500);
+}
+
+// ── TRIVIA ──
+function startTrivia(){
+  gameState.triviaUsed=[]; gameState.triviaTurn=1;
+  const qi=Math.floor(Math.random()*TRIVIA.length);
+  gameState.triviaUsed=[qi];
+  setState({screen:'trivia',triviaQi:qi,triviaAnswered:false,triviaTurn:1,triviaUsed:[qi],triviaMsg:'',turn:gameState.turn});
+  showScreen('s-trivia'); renderTriviaQ();
+}
+
+function renderTriviaQ(){
+  const qi=gameState.triviaQi;
+  if(qi===undefined) return;
+  const q=TRIVIA[qi];
+  const t=gameState.triviaTurn||1;
+  const letters=['أ','ب','ج','د'];
+  const canAnswer=!gameState.triviaAnswered&&t===myPlayer;
+  document.getElementById('trivia-area').innerHTML=`
+    <div class="trivia-q"><div style="font-size:.8rem;color:${COLORS[t]};margin-bottom:.5rem">دور ${getName(t)} 🎯</div>${q.q}</div>
+    ${q.opts.map((o,i)=>`<button class="opt" ${canAnswer?`onclick="answerTrivia(${i})"`:''} ${!canAnswer?'style="opacity:.5;cursor:default"':''} ><span class="opt-ltr">${letters[i]}</span>${o}</button>`).join('')}
+    ${gameState.triviaMsg?`<div style="text-align:center;margin-top:.8rem;font-weight:700;font-size:.95rem;color:${gameState.triviaMsg.includes('✅')?'var(--green)':'#ff6b6b'}">${gameState.triviaMsg}</div>`:''}
+    ${!canAnswer&&!gameState.triviaAnswered&&t!==myPlayer?'<div style="text-align:center;color:var(--muted);font-size:.85rem;margin-top:.8rem">انتظر دورك... ⏳</div>':''}`;
+  renderAllSB();
+}
+
+function answerTrivia(i){
+  const t=gameState.triviaTurn||1;
+  if(gameState.triviaAnswered||t!==myPlayer) return;
+  const q=TRIVIA[gameState.triviaQi];
+  const correct=i===q.a;
+  const s={...gameState.scores};
+  if(correct){ s[t]=(s[t]||0)+1; fbSet(`rooms/${roomCode}/scores`,s); floatEmoji('🌟'); }
+  const msg=correct?`✅ إجابة صحيحة! +1 نقطة لـ ${getName(t)}`:`❌ خطأ! الإجابة: ${q.opts[q.a]}`;
+  const nextT=t===1?2:1;
+  const used=[...(gameState.triviaUsed||[])];
+  const avail=TRIVIA.map((_,idx)=>idx).filter(idx=>!used.includes(idx));
+  const nextQi=avail.length>0?avail[Math.floor(Math.random()*avail.length)]:Math.floor(Math.random()*TRIVIA.length);
+  used.push(nextQi);
+  setState({screen:'trivia',triviaQi:gameState.triviaQi,triviaAnswered:true,triviaTurn:t,triviaUsed:used,triviaMsg:msg,turn:gameState.turn});
+  setTimeout(()=>{
+    if((s[1]||0)>=5||(s[2]||0)>=5){ showResult((s[1]||0)>=(s[2]||0)?1:2); return; }
+    setState({screen:'trivia',triviaQi:nextQi,triviaAnswered:false,triviaTurn:nextT,triviaUsed:used,triviaMsg:'',turn:gameState.turn});
+  },1800);
+}
+
+// ── TD ──
+function startTD(){
+  setState({screen:'td',tdTurn:gameState.turn||1,tdText:'',tdType:'',turn:gameState.turn});
+  showScreen('s-td'); renderTD();
+}
+
+function renderTD(){
+  const t=gameState.tdTurn||1;
+  document.getElementById('td-whose').innerHTML=`دور <span style="color:${COLORS[t]};font-weight:800">${getName(t)}</span> - اختر! 👇`;
+  const res=document.getElementById('td-result');
+  if(gameState.tdText){
+    res.style.display='block';
+    res.innerHTML=`<div class="td-card"><div style="font-size:3rem;margin-bottom:.6rem">${gameState.tdType==='truth'?'✅':'🔥'}</div><div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem">${gameState.tdType==='truth'?'صح':'جرأة'} لـ ${getName(t)}</div><div class="td-text">${gameState.tdText}</div></div>${myPlayer===t?`<button class="btn btn-yellow" style="margin-top:.8rem" onclick="nextTDTurn()">✅ تم! دور التالي</button>`:''}`;
+  } else { res.style.display='none'; }
+  renderAllSB();
+}
+
+function pickTD(type){
+  if((gameState.tdTurn||1)!==myPlayer){alert('مو دورك! 😄');return;}
+  const list=type==='truth'?TRUTHS:DARES;
+  const item=list[Math.floor(Math.random()*list.length)];
+  setState({screen:'td',tdTurn:gameState.tdTurn||1,tdText:item,tdType:type,turn:gameState.turn});
+}
+
+function nextTDTurn(){
+  const next=(gameState.tdTurn||1)===1?2:1;
+  setState({screen:'td',tdTurn:next,tdText:'',tdType:'',turn:gameState.turn});
+}
+
+// ── MATH ──
+function startMath(){
+  gameState.mathScores={1:0,2:0}; gameState.mathTurn=1;
+  const q=genMathQ();
+  setState({screen:'math',mathQ:q,mathTurn:1,mathAnswered:false,mathMsg:'',mathScores:{1:0,2:0},turn:gameState.turn});
+  showScreen('s-math'); renderMath();
+}
+
+function genMathQ(){
+  const ops=['+','-','×'];
+  const op=ops[Math.floor(Math.random()*3)];
+  let a,b,ans;
+  if(op==='+'){a=Math.floor(Math.random()*50)+10;b=Math.floor(Math.random()*50)+10;ans=a+b;}
+  else if(op==='-'){a=Math.floor(Math.random()*50)+30;b=Math.floor(Math.random()*30)+5;ans=a-b;}
+  else{a=Math.floor(Math.random()*12)+2;b=Math.floor(Math.random()*12)+2;ans=a*b;}
+  const wrongs=new Set();
+  while(wrongs.size<3){const w=ans+(Math.random()>.5?1:-1)*(Math.floor(Math.random()*10)+1);if(w!==ans&&w>0)wrongs.add(w);}
+  const opts=[...wrongs,ans].sort(()=>Math.random()-.5);
+  return{a,b,op,ans,opts};
+}
+
+function renderMath(){
+  const q=gameState.mathQ; if(!q) return;
+  const t=gameState.mathTurn||1;
+  const letters=['أ','ب','ج','د'];
+  const canAnswer=!gameState.mathAnswered&&t===myPlayer;
+  document.getElementById('math-area').innerHTML=`
+    <div style="text-align:center;color:${COLORS[t]};font-size:.85rem;font-weight:700;margin-bottom:.5rem">دور ${getName(t)} 🔥</div>
+    <div style="font-size:2.5rem;font-weight:900;text-align:center;margin:1rem 0;color:var(--yellow)">${q.a} ${q.op} ${q.b} = ؟</div>
+    ${q.opts.map((o,i)=>`<button class="opt" ${canAnswer?`onclick="answerMath(${o})"`:''} ${!canAnswer?'style="opacity:.5;cursor:default"':''}>${letters[i]} ${o}</button>`).join('')}
+    ${gameState.mathMsg?`<div style="text-align:center;margin-top:.8rem;font-weight:700;color:${gameState.mathMsg.includes('✅')?'var(--green)':'#ff6b6b'}">${gameState.mathMsg}</div>`:''}`;
+  renderAllSB();
+}
+
+function answerMath(chosen){
+  const t=gameState.mathTurn||1;
+  if(gameState.mathAnswered||t!==myPlayer) return;
+  const q=gameState.mathQ;
+  const correct=chosen===q.ans;
+  const ms={...(gameState.mathScores||{1:0,2:0})};
+  const s={...gameState.scores};
+  if(correct){ms[t]=(ms[t]||0)+1;s[t]=(s[t]||0)+1;fbSet(`rooms/${roomCode}/scores`,s);floatEmoji('🔥');}
+  const msg=correct?`✅ صح! +1 نقطة`:`❌ خطأ! الجواب ${q.ans}`;
+  const nextT=t===1?2:1;
+  setState({screen:'math',mathQ:q,mathTurn:t,mathAnswered:true,mathMsg:msg,mathScores:ms,turn:gameState.turn});
+  setTimeout(()=>{
+    if((ms[1]||0)>=5||(ms[2]||0)>=5){showResult((ms[1]||0)>=(ms[2]||0)?1:2);return;}
+    setState({screen:'math',mathQ:genMathQ(),mathTurn:nextT,mathAnswered:false,mathMsg:'',mathScores:ms,turn:gameState.turn});
+  },1600);
+}
+
+// ── RESULT ──
+function showResult(winner){
+  const overlay=document.getElementById('result-overlay');
+  const nextTurn=winner===0?(gameState.turn||1):(winner===1?2:1);
+  if(winner===0){
+    document.getElementById('res-emoji').textContent='🤝';
+    document.getElementById('res-title').textContent='تعادل! 😅';
+    document.getElementById('res-title').style.color='var(--yellow)';
+    document.getElementById('res-sub').textContent='لا أحد يخسر ولا أحد يفوز هذه المرة!';
+    document.getElementById('ch-box').style.display='none';
+  } else {
+    const loser=winner===1?2:1;
+    document.getElementById('res-emoji').textContent='🏆';
+    document.getElementById('res-title').textContent=`فاز ${getName(winner)}! 🎉`;
+    document.getElementById('res-title').style.color='var(--yellow)';
+    document.getElementById('res-sub').textContent=`${getName(winner)} يأخذ النقطة! و${getName(loser)} عليه تحدي 😏`;
+    const ch=CHALLENGES[Math.floor(Math.random()*CHALLENGES.length)];
+    document.getElementById('ch-emoji').textContent=ch.e;
+    document.getElementById('ch-text').innerHTML=`<span class="loser-name">${getName(loser)}</span>، تحديك:<br/>${ch.t}`;
+    document.getElementById('ch-box').style.display='block';
+    floatEmoji('🏆');floatEmoji('🎊');
+  }
+  gameState.turn=nextTurn;
+  overlay.classList.add('show');
+}
+
+function backToSelect(){
+  closeResult();
+  setState({screen:'select',turn:gameState.turn||1,game:''});
+}
+function closeResult(){ document.getElementById('result-overlay').classList.remove('show'); }
+
+function floatEmoji(e){
+  const el=document.createElement('div');
+  el.className='floater';el.textContent=e;
+  el.style.left=Math.random()*80+10+'vw';el.style.bottom='15vh';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),2100);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
